@@ -133,7 +133,7 @@ func (set *IPSet) setIPSetDefaults() {
 		set.HashSize = 1024
 	}
 	if set.MaxElem == 0 {
-		set.MaxElem = 65536
+		set.MaxElem = 131072
 	}
 	// Default protocol is IPv4
 	if set.HashFamily == "" {
@@ -288,6 +288,8 @@ func New(exec utilexec.Interface) Interface {
 func (runner *runner) CreateSet(set *IPSet, ignoreExistErr bool) error {
 	// sets some IPSet fields if not present to their default values.
 	set.setIPSetDefaults()
+
+	klog.InfoS("Creating ipset", "name", set.Name, "type", set.SetType, "hashSize", set.HashSize, "maxElem", set.MaxElem)
 
 	// Validate ipset before creating
 	if err := set.Validate(); err != nil {
