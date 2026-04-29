@@ -247,7 +247,17 @@ func (r *RepairIPAddress) RunUntil(onFirstSuccess func(), stopCh chan struct{}) 
 
 // runOnce verifies the state of the ClusterIP allocations and returns an error if an unrecoverable problem occurs.
 func (r *RepairIPAddress) runOnce() error {
-	return retry.OnError(retry.DefaultBackoff, func(err error) bool {
+	// Retry budget of ~5 minutes to outlast a slow namespace-informer sync
+	// on large clusters, where admission rejects writes with "not yet ready
+	// to handle request" until the namespace cache is populated.
+	// Ref: https://issues.k8s.io/136288
+	backoff := wait.Backoff{
+		Steps:    60,
+		Duration: 5 * time.Second,
+		Factor:   1.0,
+		Jitter:   0.1,
+	}
+	return retry.OnError(backoff, func(err error) bool {
 		// When trying to repair the ClusterIP allocations, we may get a conflict or forbidden error.
 		// IsForbidden depends on the admission chain to be ready that may depend on the
 		// Namespace informer to be ready.
