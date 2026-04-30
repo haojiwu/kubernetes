@@ -18,6 +18,7 @@ package images
 
 import (
 	"fmt"
+	"os"
 
 	"k8s.io/klog/v2"
 
@@ -27,6 +28,11 @@ import (
 	kubeadmutil "k8s.io/kubernetes/cmd/kubeadm/app/util"
 )
 
+// KubeAPIServerImageEnvVar is an environment variable that, when set, overrides
+// the default-derived kube-apiserver image. The value must be a full image
+// reference (e.g. my-registry.example.com/my-org/kube-apiserver:v1.33.7-custom).
+const KubeAPIServerImageEnvVar = "CUSTOM_KUBE_APISERVER_IMAGE"
+
 // GetGenericImage generates and returns a platform agnostic image (backed by manifest list)
 func GetGenericImage(prefix, image, tag string) string {
 	return fmt.Sprintf("%s/%s:%s", prefix, image, tag)
@@ -35,6 +41,12 @@ func GetGenericImage(prefix, image, tag string) string {
 // GetKubernetesImage generates and returns the image for the components managed in the Kubernetes main repository,
 // including the control-plane components and kube-proxy.
 func GetKubernetesImage(image string, cfg *kubeadmapi.ClusterConfiguration) string {
+	// Allow a full image override for kube-apiserver only, via env var.
+	if image == constants.KubeAPIServer {
+		if env := os.Getenv(KubeAPIServerImageEnvVar); env != "" {
+			return env
+		}
+	}
 	repoPrefix := cfg.GetControlPlaneImageRepository()
 	kubernetesImageTag := kubeadmutil.KubernetesVersionToImageTag(cfg.KubernetesVersion)
 	return GetGenericImage(repoPrefix, image, kubernetesImageTag)
