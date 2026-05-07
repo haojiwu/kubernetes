@@ -506,7 +506,7 @@ func (p *legacyProvider) PostStartHook() (string, genericapiserver.PostStartHook
 		// successful repair loop, so we basically pass appropriate
 		// callbacks to RunUtil methods.
 		// Additionally, we ensure that we don't wait for it for longer
-		// than 5 minutes for backward compatibility of failing the whole
+		// than 10 minutes for backward compatibility of failing the whole
 		// apiserver if we can't repair them.
 		wg := sync.WaitGroup{}
 		wg.Add(2)
@@ -530,7 +530,7 @@ func (p *legacyProvider) PostStartHook() (string, genericapiserver.PostStartHook
 		}()
 		select {
 		case <-done:
-		case <-time.After(5 * time.Minute):
+		case <-time.After(10 * time.Minute):
 			return goerrors.New("unable to perform initial IP and Port allocation check")
 		}
 

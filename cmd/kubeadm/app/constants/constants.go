@@ -230,8 +230,12 @@ const (
 	// EtcdAPICallRetryInterval specifies how frequently to retry requests against the etcd API.
 	EtcdAPICallRetryInterval = 500 * time.Millisecond
 
-	// ControlPlaneComponentHealthCheckTimeout specifies the default control plane component health check timeout
-	ControlPlaneComponentHealthCheckTimeout = 4 * time.Minute
+	// ControlPlaneComponentHealthCheckTimeout specifies the default control plane component health check timeout.
+	// Bumped to 12 minutes (vs upstream 4) to give the patched kube-apiserver's
+	// repair-controller PostStartHook (10 minute budget) headroom to complete
+	// before kubeadm declares the control plane unhealthy.
+	// Ref: https://issues.k8s.io/136288
+	ControlPlaneComponentHealthCheckTimeout = 12 * time.Minute
 
 	// KubeletHealthCheckTimeout specifies the default kubelet timeout
 	KubeletHealthCheckTimeout = 4 * time.Minute
