@@ -163,7 +163,11 @@ func (p *PolicyData) EnsureRBACPolicy() genericapiserver.PostStartHookFunc {
 	return func(hookContext genericapiserver.PostStartHookContext) error {
 		// initializing roles is really important.  On some e2e runs, we've seen cases where etcd is down when the server
 		// starts, the roles don't initialize, and nothing works.
-		err := wait.Poll(1*time.Second, 30*time.Second, func() (done bool, err error) {
+		// Extended from 30s to 10m so that on large clusters where admission rejects writes
+		// with "not yet ready to handle request" for several minutes during the namespace
+		// informer sync, the bootstrap continues to retry instead of fataling the apiserver.
+		// Ref: https://issues.k8s.io/136288
+		err := wait.Poll(1*time.Second, 10*time.Minute, func() (done bool, err error) {
 			client, err := clientset.NewForConfig(hookContext.LoopbackClientConfig)
 			if err != nil {
 				utilruntime.HandleError(fmt.Errorf("unable to initialize client set: %v", err))
